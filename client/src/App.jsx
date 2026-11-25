@@ -665,17 +665,21 @@ function VenueMap({ venues, selected, onSelect, onMapClick, tile = 'street', hei
     if (selected) setCenter([selected.lat, selected.lng]);
   }, [selected]);
 
-  const tiles = tile === 'satellite'
-    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-    : tile === 'terrain'
-      ? 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  const attribution = tile === 'satellite'
-    ? 'Tiles © Esri'
-    : tile === 'terrain'
-      ? 'Map data: © OpenStreetMap & SRTM | © OpenTopoMap'
-      : '&copy; OpenStreetMap contributors';
+const cartoKey = import.meta.env.VITE_CARTO_API_KEY || '';
+
+const tiles = tile === 'satellite'
+  ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+  : tile === 'terrain'
+    ? 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+    : `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoKey}`;
+
+const attribution = tile === 'satellite'
+  ? 'Tiles © Esri'
+  : tile === 'terrain'
+    ? 'Map data: © OpenStreetMap & SRTM | © OpenTopoMap'
+    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, &copy; <a href="https://carto.com/attribution/">CARTO</a>';
+
 
   const routeLine = useMemo(() => {
     if (!venues || venues.length < 2) return null;
