@@ -2,7 +2,7 @@
   "name": "aurelia-vinyl-live",
   "version": "1.0.0",
   "private": true,
-  "description": "Aurelia Vinyl Live — UK live music, artist archive and ticketing portal",
+  "description": "Aurelia Vinyl Live \u2014 UK live music, artist archive and ticketing portal",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:client\"",
@@ -28,5 +28,9 @@
     "@vitejs/plugin-react": "^4.7.0",
     "concurrently": "^9.1.2",
     "vite": "^5.4.21"
+  },
+  "engines": {
+    "node": ">=22.5.0",
+    "npm": ">=10"
   }
 }

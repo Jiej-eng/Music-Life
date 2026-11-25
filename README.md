@@ -1,16 +1,22 @@
-# Aurelia Vinyl Live — Complete React + Node Project
+# Aurelia Vinyl Live — Coursework 2 Proof of Concept
 
-A complete, runnable full-stack starter for the Aurelia Vinyl Live UK music portal. It includes a responsive React interface, Express API, persistent JSON data store, account registration/login, organiser-only event publishing, artist archive, following, UK venue map, server-checked seat reservations and reservation confirmations.
+A responsive full-stack music discovery and ticket-reservation website. The project uses React + Vite for the client, Node.js + Express for the REST API, and SQLite for relational persistence.
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js **22.5 or newer** (the repository pins 22.16.0 in `.node-version`) (the project uses the built-in `node:sqlite` module)
 - npm 10 or newer
 
 ## Run locally
 
 ```bash
 npm install
+cp .env.example .env
+```
+
+Set a strong random `JWT_SECRET` in `.env`, then run:
+
+```bash
 npm run dev
 ```
 
@@ -32,53 +38,68 @@ The Express server serves the compiled frontend from `client/dist`.
 | Organiser | `admin@aurelia.uk` | `Aurelia2026!` |
 | Guest | `guest@aurelia.uk` | `Vinyl2026!` |
 
-The organiser account can publish performances. Both accounts can follow artists and save curator notes. Anyone can create a seat reservation in this demonstration build; sign-in is required to view a saved account's ticket list.
+Change or remove these accounts before any public deployment.
 
-## What is included
+## Features
 
-- Home, genre discovery and upcoming performances
-- Concert search and genre/availability filters
-- Ten UK venue locations on a Leaflet map (street and satellite layers), real UK postcode/place geocoding and custom map-drop pins
-- Interactive 10 × 10 seat plan; reserved seats are checked on the server
-- Student, general and VIP ticket tiers; `UWS20` and `PAISLEY20` demo promo codes
-- Reservation confirmation with a unique reference and selected seats
-- Account registration and login with bcrypt password hashing and signed JWT sessions
+- Responsive event discovery, search and genre/availability filtering
+- Artist archive, biographies, follows and curator notes
+- UK venue map using Leaflet
+- Interactive 10 × 10 seat plan and server-side availability validation
+- Student, general and VIP ticket tiers; `UWS20` and `PAISLEY20` demonstration promo codes
+- Reservation confirmation with a unique reference
+- Registration/login with bcrypt password hashing and JWT sessions
 - Organiser-only event publishing
-- Artist archive, image upload, follows and editable curator notes
-- English / Simplified Chinese interface toggle and dark / light colour themes
+- SQLite relational database with users, venues, artists, events, follows, tickets and ticket-seat records
+- Database foreign keys and a unique `(event_id, seat_code)` key to prevent duplicate seat allocation
+- English / Simplified Chinese interface and dark / light themes
 
-## Important operating notes
+## Database
 
-This is a runnable starter and demonstration ticketing workflow, **not a production payment platform**. The reservation endpoint records an order and prevents duplicate seat allocation within this single Node server process, but it does not collect money, send email, issue legally validated admission credentials, or integrate with a payment provider. The reservation confirmation clearly identifies itself as a demo reservation and not a payment receipt.
+The database is created automatically at `server/data/musiclife.sqlite` when running locally. Set `DB_DIR` to change the database directory; the Render blueprint mounts a persistent disk at `/var/data` and stores the database there. It does not require a separate database server. The previous JSON store is migrated automatically if `server/data/store.json` exists and the SQLite database is empty.
 
-Before public deployment:
+Back up `server/data/musiclife.sqlite` before replacing or redeploying the application. For a hosted deployment, use a persistent disk for this directory.
 
-1. Set a long, random `JWT_SECRET` environment variable. Do not use the development fallback secret.
-2. Replace the JSON file store with a transactional database (PostgreSQL is recommended) and enforce seat uniqueness with a database constraint/transaction. The included JSON store is suitable only for a single-instance demo.
-3. Integrate a payment provider (for example Stripe Checkout) and only mark orders as paid / issue final tickets after a verified server-side payment webhook.
-4. Configure `CLIENT_ORIGIN` to your production frontend origin, enable HTTPS, add transactional email, backups, monitoring and an organiser approval workflow.
-5. Change the demo account passwords or remove the seeded demo users before deployment.
-6. Review venue branding, event permissions, privacy policy, cookie policy, refund terms and UK GDPR obligations before accepting public customers.
+## Coursework documentation
+
+See [`DESIGN_DOCUMENT.md`](./DESIGN_DOCUMENT.md) for the system design document, requirements, architecture, database model, API summary, workflows, security notes, test plan and deployment instructions. Add your personal/module details and real screenshots/test evidence before submission.
+
+## Important limitations
+
+This is a coursework proof of concept, not a production payment platform. It records demonstration reservations but does not collect money, send email, issue legally validated admission credentials or integrate with a payment provider. The demo administrator account is seeded for assessment. Before public use, add HTTPS, strong secret management, persistent backups, payment-provider integration, privacy/refund policies and a review of UK GDPR requirements.
+
+## Deploy to Render
+
+1. Push this repository to your GitHub account.
+2. In Render, choose **New → Blueprint** and select the repository containing `render.yaml`.
+3. Review the service. The blueprint creates a paid Starter web service and a 1 GB persistent disk because SQLite data must survive deploys and restarts.
+4. Render generates `JWT_SECRET`; keep it private. `DB_DIR=/var/data` is configured for the persistent disk.
+5. Wait for the first deploy to finish, then open the `onrender.com` URL and test `/api/health`, registration, login and a demo reservation.
+
+Do not deploy this SQLite app as multiple web-service instances or remove its persistent disk. A free ephemeral instance can lose SQLite data on restart/redeploy. The generated Render URL does not exist until you create the service in your own Render account.
+
+## Deployment notes
+
+- Set `NODE_ENV=production` and a strong `JWT_SECRET`.
+- Set `CLIENT_ORIGIN` to the production origin if the client is hosted separately.
+- Ensure `server/data` is stored on a persistent disk.
+- Run `npm run build` before starting the server.
 
 ## Project structure
 
 ```text
-aurelia-vinyl-live/
+Music-Life-main/
   client/
+    public/cover/
+    src/App.jsx
+    src/main.jsx
+    src/styles.css
     index.html
     vite.config.js
-    src/
-      App.jsx
-      main.jsx
-      styles.css
   server/
     index.js
     store.js
-    data/           # Created automatically on first server start
+    data/musiclife.sqlite   # created on first run
+  DESIGN_DOCUMENT.md
   package.json
-  README.md
 ```
-
-## Reset demo data
-
-Stop the server, remove `server/data/store.json`, then start the server again. Seed data and demo accounts will be recreated automatically.

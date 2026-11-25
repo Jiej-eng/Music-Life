@@ -12,6 +12,9 @@ import { readStore, writeStore, VENUES, newId } from './store.js';
 const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const JWT_SECRET = process.env.JWT_SECRET || 'replace-this-secret-before-public-deployment';
+if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'replace-this-secret-before-public-deployment') {
+  throw new Error('Set a strong JWT_SECRET environment variable before production deployment.');
+}
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.disable('x-powered-by');
@@ -37,6 +40,12 @@ const auth = (req, res, next) => {
   } catch {
     return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
   }
+};
+const optionalAuth = (req, _res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (token) { try { const payload = jwt.verify(token, JWT_SECRET); req.user = getStore().users.find(x => x.id === payload.sub) || null; } catch { req.user = null; } }
+  next();
 };
 const adminOnly = (req, res, next) => req.user?.role === 'admin' ? next() : res.status(403).json({ error: 'Organizer access is required for this action.' });
 const eventWithStats = (event, tickets) => {
@@ -154,7 +163,7 @@ app.post('/api/artists/:id/follow', auth, (req, res) => {
   res.json({ followed: !followed, followedArtists: user.followedArtists });
 });
 
-app.post('/api/tickets', (req, res) => {
+app.post('/api/tickets', optionalAuth, (req, res) => {
   const eventId = cleanText(req.body.eventId, 100);
   const seats = Array.isArray(req.body.seats) ? [...new Set(req.body.seats.map(s => cleanText(s, 8)))] : [];
   const holderName = cleanText(req.body.holderName, 100);
@@ -177,17 +186,20 @@ app.post('/api/tickets', (req, res) => {
   const totalPrice = Number((unitPrice * seats.length).toFixed(2));
   const tierLabel = tier === 'student' ? 'Student Pass' : tier === 'vip' ? 'VIP Soundcheck' : 'General Admission';
   const ticket = {
-    id: newId(), ticketCode: `AV-${crypto.randomInt(100000, 999999)}`, eventId, eventTitle: event.title, artist: event.artist, venueName: event.name, address: event.address, city: event.city, date: event.date,
+    id: newId(), ticketCode: `AV-${crypto.randomInt(100000, 999999)}`, eventId, userId: req.user?.id || null, eventTitle: event.title, artist: event.artist, venueName: event.name, address: event.address, city: event.city, date: event.date,
     seats, tier, tierLabel, unitPrice, totalPrice, holderName, email, createdAt: new Date().toISOString(), status: 'reserved'
   };
   store.tickets.unshift(ticket);
-  writeStore(store);
+  try { writeStore(store); } catch (error) {
+    if (String(error.code || '').startsWith('SQLITE_CONSTRAINT')) return res.status(409).json({ error: 'A selected seat has just been reserved. Please choose another seat.' });
+    throw error;
+  }
   res.status(201).json({ ticket, event: eventWithStats(event, store.tickets) });
 });
 
 app.get('/api/tickets', auth, (req, res) => {
   const store = getStore();
-  const tickets = req.user.role === 'admin' ? store.tickets : store.tickets.filter(t => t.email === req.user.email);
+  const tickets = req.user.role === 'admin' ? store.tickets : store.tickets.filter(t => t.userId === req.user.id);
   res.json({ tickets });
 });
 

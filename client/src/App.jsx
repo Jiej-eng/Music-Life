@@ -1149,6 +1149,7 @@ function App() {
 
     try {
       const data = await request('/tickets', {
+        token,
         method: 'POST',
         body: JSON.stringify({
           eventId: selectedEvent.id,
