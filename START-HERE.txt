@@ -1,0 +1,19 @@
+AURELIA VINYL LIVE — START HERE
+
+1. Install Node.js 20+.
+2. Extract this ZIP.
+3. Open a terminal in the extracted aurelia-vinyl-live folder.
+4. Run: npm install
+5. Run: npm run dev
+6. Open: http://localhost:5173
+
+Demo organiser:
+  Email: admin@aurelia.uk
+  Password: Aurelia2026!
+
+Demo guest:
+  Email: guest@aurelia.uk
+  Password: Vinyl2026!
+
+Read README.md for production build, security and deployment notes.
+Payment is not integrated. Reservations are demo orders and are not payment receipts.
